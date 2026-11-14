@@ -180,10 +180,10 @@ p{margin:0}
 
 /* say-my-price band */
 .say-band{background:var(--hero-bg);color:var(--hero-fg)}
-.say-band .wrap{display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:clamp(24px,5vw,64px);align-items:center;padding-block:clamp(40px,6vw,72px)}
+.say-band .wrap{display:grid;grid-template-columns:minmax(0,600px) minmax(0,1fr);gap:clamp(24px,5vw,64px);align-items:center;padding-block:clamp(40px,6vw,72px)}
 @media (max-width:760px){.say-band .wrap{grid-template-columns:1fr}}
 .say-band figure{margin:0;min-width:0}
-.say-band img{display:block;width:100%;max-width:440px;aspect-ratio:438/228;object-fit:cover;border-radius:var(--radius);border:1px solid var(--hero-rule);box-shadow:0 30px 60px -30px rgba(0,0,0,.8);filter:saturate(.92) contrast(1.04)}
+.say-band img{display:block;width:100%;max-width:600px;aspect-ratio:876/456;object-fit:cover;border-radius:var(--radius);border:1px solid var(--hero-rule);box-shadow:0 30px 60px -30px rgba(0,0,0,.8);filter:saturate(.92) contrast(1.04)}
 .say-band figcaption{margin-top:8px;font-size:.66rem;color:var(--hero-muted)}
 .say-band h2{font-size:clamp(2.6rem,6vw,4.4rem);font-weight:700;letter-spacing:-.045em;line-height:1}
 .say-band h2 .el{width:1.15em;height:1.15em;font-size:.82em;border-radius:6px;margin-right:.04em;vertical-align:-.12em}
@@ -474,13 +474,12 @@ footer p{max-width:70ch}
 <section class="say-band" aria-label="Say my price">
   <div class="wrap">
     <figure>
-      <img src="assets/walt.jpg" alt="Walter White standing in the desert, from Breaking Bad" width="438" height="228" loading="lazy">
+      <img src="assets/say-my-price.jpg" alt="Meme: Walter White in the desert, captioned &quot;$136.91 / g&quot; and &quot;Say my price.&quot;" width="876" height="456" loading="lazy">
       <figcaption>Still: <i>Breaking Bad</i> (AMC / Sony Pictures Television). Fan homage, non-commercial.</figcaption>
     </figure>
     <div>
       <div class="label" style="color:var(--hero-muted)">Exact labels</div>
-      <h2 style="margin-top:12px">Say my <span class="el" aria-hidden="true"><span class="z">59</span>Pr</span>ice.</h2>
-      <p>Every ChemCost label is computed exactly from frozen supplier quotes: <span class="price">$136.91</span> per gram of product for the reaction above. An agent gets credit only when its own number lands within 10% or 25% of it.</p>
+      <p style="margin-top:12px">Every ChemCost label is computed exactly from frozen supplier quotes: <span class="price">$136.91</span> per gram of product for the reaction above. An agent gets credit only when its own number lands within 10% or 25% of it.</p>
     </div>
   </div>
 </section>
