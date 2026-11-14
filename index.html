@@ -149,7 +149,6 @@ p{margin:0}
 .r-foot{border-top:1px dashed var(--rule);margin-top:4px;padding:12px 18px 18px;display:grid;gap:6px}
 .r-line{display:flex;justify-content:space-between;gap:12px;font-size:.82rem}
 .r-total{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:6px;padding-top:10px;border-top:1px solid var(--rule)}
-.r-total .say{display:block;margin-top:4px;font-family:var(--display);font-weight:700;font-size:1.05rem;letter-spacing:-.02em;color:var(--ink)}
 .r-total .big{font-family:var(--display);font-size:2rem;color:var(--accent);font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .stages{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:22px}
 .stages button{font:inherit;font-size:.8rem;text-align:left;border:1px solid var(--hero-rule);background:rgba(255,255,255,.06);color:var(--hero-muted);border-radius:12px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:8px 10px;cursor:pointer;line-height:1.25;transition:border-color .15s,color .15s,background-color .15s}
@@ -178,6 +177,20 @@ p{margin:0}
 .stat .v small{font-size:.5em;color:var(--muted);margin-left:2px}
 .stat .k{margin-top:8px;font-size:.82rem;color:var(--muted);line-height:1.4}
 @media (max-width:760px){.stats .wrap{grid-template-columns:repeat(2,minmax(0,1fr))}.stat:nth-child(2){border-right:0}.stat:nth-child(3){padding-left:0}.stat:nth-child(-n+2){border-bottom:1px solid var(--rule)}}
+
+/* say-my-price band */
+.say-band{background:var(--hero-bg);color:var(--hero-fg)}
+.say-band .wrap{display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:clamp(24px,5vw,64px);align-items:center;padding-block:clamp(40px,6vw,72px)}
+@media (max-width:760px){.say-band .wrap{grid-template-columns:1fr}}
+.say-band figure{margin:0;min-width:0}
+.say-band img{display:block;width:100%;max-width:440px;aspect-ratio:438/228;object-fit:cover;border-radius:var(--radius);border:1px solid var(--hero-rule);box-shadow:0 30px 60px -30px rgba(0,0,0,.8);filter:saturate(.92) contrast(1.04)}
+.say-band figcaption{margin-top:8px;font-size:.66rem;color:var(--hero-muted)}
+.say-band h2{font-size:clamp(2.6rem,6vw,4.4rem);font-weight:700;letter-spacing:-.045em;line-height:1}
+.say-band h2 .el{width:1.15em;height:1.15em;font-size:.82em;border-radius:6px;margin-right:.04em;vertical-align:-.12em}
+.say-band h2 .el .z{font-size:.24em}
+.say-band h2 .el .m{display:none}
+.say-band p{margin-top:16px;max-width:46ch;color:var(--hero-muted);font-size:1.02rem}
+.say-band .price{color:var(--accent);font-variant-numeric:tabular-nums;font-weight:600}
 
 /* sections */
 section.block{padding-block:clamp(56px,8vw,104px) 0}
@@ -433,7 +446,7 @@ footer p{max-width:70ch}
         <div class="r-foot">
           <div class="r-line cell s4"><span>Packs bought</span><span class="num">$30.60</span></div>
           <div class="r-line cell s4"><span>Product at 1 mmol, 78.9% yield</span><span class="num">0.2235 g</span></div>
-          <div class="r-total"><span><span class="label">Label · USD per gram of product</span><span class="say">Say my price.</span></span><span class="big">$136.91</span></div>
+          <div class="r-total"><span class="label">Label · USD per gram of product</span><span class="big">$136.91</span></div>
         </div>
       </div>
 
@@ -457,6 +470,20 @@ footer p{max-width:70ch}
     <div class="stat"><div class="v num">66.9<small>%</small></div><div class="k">expert human reference with the same tools</div></div>
   </div>
 </div>
+
+<section class="say-band" aria-label="Say my price">
+  <div class="wrap">
+    <figure>
+      <img src="assets/walt.jpg" alt="Walter White standing in the desert, from Breaking Bad" width="438" height="228" loading="lazy">
+      <figcaption>Still: <i>Breaking Bad</i> (AMC / Sony Pictures Television). Fan homage, non-commercial.</figcaption>
+    </figure>
+    <div>
+      <div class="label" style="color:var(--hero-muted)">Exact labels</div>
+      <h2 style="margin-top:12px">Say my <span class="el" aria-hidden="true"><span class="z">59</span>Pr</span>ice.</h2>
+      <p>Every ChemCost label is computed exactly from frozen supplier quotes: <span class="price">$136.91</span> per gram of product for the reaction above. An agent gets credit only when its own number lands within 10% or 25% of it.</p>
+    </div>
+  </div>
+</section>
 
 <main>
 <section class="block" id="task">
