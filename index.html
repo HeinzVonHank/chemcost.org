@@ -1,0 +1,905 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>ChemCost</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="ChemCost: a judge-free benchmark for LLM agents on chemical procurement-cost estimation. NeurIPS 2026 Evaluations and Datasets Track.">
+<link rel="canonical" href="https://chemcost.org/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://chemcost.org/">
+<meta property="og:title" content="ChemCost: Can Agents Price a Reaction?">
+<meta property="og:description" content="A judge-free benchmark for LLM agents on chemical procurement-cost estimation. NeurIPS 2026 Evaluations and Datasets Track.">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one 1120px editorial column; the hero pairs the thesis with a working procurement receipt,
+   sections below alternate prose (left rail) with figures drawn natively from the paper's numbers. */
+:root{
+  --paper:#F3F5F2;      /* lab-bench paper, faint green bias */
+  --surface:#FFFFFF;
+  --ink:#121D1A;
+  --muted:#5A6762;
+  --rule:#D6DDD8;
+  --accent:#0E7A4A;     /* lab green */
+  --accent-soft:#DDF1E5;
+  --good:#1E7653;
+  --warn:#C2571A;       /* failures, abstention */
+  --fam-closed:#121D1A;
+  --fam-open:#6A7F98;
+  --fam-chem:#A3AEA9;
+  --code-bg:#E9EDE9;
+
+  /* Apple system faces first (SF Pro / SF Mono on Apple devices); Inter is the off-Apple stand-in */
+  --display:-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --body:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono:ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --hero-bg:#0A0D0C; --hero-fg:#F5F5F7; --hero-muted:rgba(245,245,247,.72); --hero-rule:rgba(245,245,247,.18);
+  --radius:18px;
+  --tile-a:#3E9B5C; --tile-b:#123F25; --tile-fg:#F4FFF7;
+
+  --step--1:.8125rem; --step-0:1rem; --step-1:1.1875rem; --step-2:1.5rem; --step-3:clamp(1.9rem, 3.6vw, 2.75rem); --step-4:clamp(2.6rem, 5.4vw, 4.5rem);
+  --wrap:1120px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0D1412; --surface:#141D1A; --ink:#E5EBE7; --muted:#92A09A; --rule:#27332F;
+    --accent:#4FD08C; --accent-soft:#12341F; --good:#5DC596; --warn:#F2964F;
+    --fam-closed:#E5EBE7; --fam-open:#8FA3BC; --fam-chem:#56645F; --code-bg:#18221F;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0D1412; --surface:#141D1A; --ink:#E5EBE7; --muted:#92A09A; --rule:#27332F;
+  --accent:#4FD08C; --accent-soft:#12341F; --good:#5DC596; --warn:#F2964F;
+  --fam-closed:#E5EBE7; --fam-open:#8FA3BC; --fam-chem:#56645F; --code-bg:#18221F;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto} *{transition:none!important;animation:none!important}}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:var(--step-0);line-height:1.6;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+.wrap{max-width:var(--wrap);margin:0 auto;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.label{font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+h1,h2,h3{text-wrap:balance;margin:0}
+h2{font-family:var(--display);font-weight:600;font-size:var(--step-3);line-height:1.08;letter-spacing:-.028em}
+h3{font-family:var(--body);font-weight:600;font-size:var(--step-1);line-height:1.3}
+p{margin:0}
+.prose{max-width:62ch;color:var(--ink)}
+.prose p+p{margin-top:.9em}
+.muted{color:var(--muted)}
+
+/* nav */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:color-mix(in srgb, var(--paper) 88%, transparent);backdrop-filter:saturate(1.2) blur(10px);-webkit-backdrop-filter:saturate(1.2) blur(10px);border-bottom:1px solid var(--rule)}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;height:52px}
+.wordmark{font-family:var(--display);font-size:1.1rem;font-weight:500;letter-spacing:-.02em;text-decoration:none}
+.wordmark b{font-weight:700}
+.wordmark{display:inline-flex;align-items:baseline;gap:0;font-weight:600}
+/* periodic-table element tiles */
+.el{position:relative;display:inline-grid;place-items:center;vertical-align:baseline;background:linear-gradient(155deg,var(--tile-a),var(--tile-b));color:var(--tile-fg);border:1px solid rgba(255,255,255,.28);box-shadow:inset 0 0 0 1px rgba(0,0,0,.25), 0 6px 18px -8px rgba(18,63,37,.8);font-weight:700;letter-spacing:-.02em;line-height:1}
+.el .z,.el .m{position:absolute;font-weight:500;letter-spacing:0;opacity:.85;font-variant-numeric:tabular-nums}
+.el .z{top:.28em;left:.32em}
+.el .m{bottom:.26em;left:0;right:0;text-align:center}
+.el.sm{width:1.7em;height:1.7em;font-size:.95em;margin-right:.08em;border-radius:3px;transform:translateY(.28em)}
+.el.sm .z{font-size:.38em}
+.el.sm .m{display:none}
+.lockup{display:flex;align-items:flex-end;gap:.04em;font-family:var(--display);font-weight:600;font-size:clamp(1.9rem,4vw,2.6rem);letter-spacing:-.03em;color:var(--hero-fg);margin-bottom:26px}
+.lockup .el{width:2.05em;height:2.05em;font-size:1em;border-radius:5px;margin-right:.06em}
+.lockup .el .z{font-size:.26em}
+.lockup .el .m{font-size:.2em}
+.lockup .rest{padding-bottom:.12em}
+.nav ul{display:flex;gap:22px;list-style:none;margin:0;padding:0;font-size:var(--step--1)}
+.nav ul a{text-decoration:none;color:var(--muted)}
+.nav ul a:hover{color:var(--ink)}
+@media (max-width:640px){.nav ul li:nth-child(n+4){display:none}.nav ul{gap:16px}}
+
+/* hero */
+.hero{position:relative;isolation:isolate;padding-block:clamp(48px,8vw,104px) clamp(48px,7vw,88px);background:var(--hero-bg);color:var(--hero-fg);overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;z-index:-1;background-image:linear-gradient(100deg, rgba(10,13,12,.92) 0%, rgba(10,13,12,.74) 42%, rgba(10,13,12,.38) 100%), url("assets/shelf.jpg");background-size:cover;background-position:center 40%;transform:scale(1.02)}
+.hero::after{content:"";position:absolute;inset:auto 0 0;height:120px;z-index:-1;background:linear-gradient(to bottom, transparent, rgba(10,13,12,.55))}
+.photo-credit{position:absolute;right:max(16px, env(safe-area-inset-right,0px));bottom:10px;font-size:.66rem;color:var(--hero-muted);opacity:.8}
+.photo-credit a{color:inherit}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);gap:clamp(28px,5vw,64px);align-items:start}
+@media (max-width:900px){.hero-grid{grid-template-columns:1fr}}
+.venue{display:inline-flex;gap:10px;align-items:center;font-size:.8rem;font-weight:500;letter-spacing:.01em;color:var(--hero-muted);padding:6px 12px;border:1px solid var(--hero-rule);border-radius:999px;background:rgba(255,255,255,.06);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.venue i{width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block}
+.hero h1{font-family:var(--display);font-weight:700;font-size:var(--step-4);line-height:1.02;letter-spacing:-.045em;margin-top:22px}
+.hero h1 em{font-style:normal;background:linear-gradient(90deg,#4FE39A,#B5F2CF);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .sub{font-family:var(--display);font-weight:500;font-size:var(--step-2);line-height:1.3;letter-spacing:-.015em;color:var(--hero-muted);margin-top:16px;max-width:28ch}
+.authors{margin-top:28px;font-size:.95rem;line-height:1.75}
+.authors span{white-space:nowrap}
+.authors sup{font-size:.7em;color:var(--hero-muted);margin-left:1px}
+.affil{margin-top:8px;font-size:var(--step--1);color:var(--hero-muted);line-height:1.7}
+.affil sup{font-size:.75em}
+.notes{margin-top:4px;font-size:.75rem;color:var(--hero-muted)}
+.links{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+.btn{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 20px;border-radius:999px;border:1px solid var(--hero-rule);background:rgba(255,255,255,.08);color:var(--hero-fg);text-decoration:none;font-size:.95rem;font-weight:500;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:background-color .15s, transform .15s}
+.btn:hover{background:rgba(255,255,255,.16)}
+.btn.primary{background:var(--hero-fg);color:#111;border-color:var(--hero-fg)}
+.btn.primary:hover{transform:translateY(-1px);background:#fff}
+.btn[aria-disabled="true"]{color:var(--hero-muted);border-style:dashed;cursor:default;background:transparent}
+.btn svg{width:16px;height:16px;flex:none}
+
+/* receipt */
+.receipt{background:color-mix(in srgb, var(--surface) 86%, transparent);backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);color:var(--ink);border:1px solid color-mix(in srgb, var(--rule) 70%, transparent);border-radius:var(--radius);position:relative;font-size:.86rem;box-shadow:0 30px 60px -30px rgba(0,0,0,.6)}
+.r-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px 18px 12px;border-bottom:1px dashed var(--rule)}
+.r-head .t{font-family:var(--display);font-size:1.1rem;font-weight:600;letter-spacing:-.015em}
+.r-cols,.r-row{display:grid;grid-template-columns:minmax(0,1fr) 3.2rem 4.8rem 4.6rem 3.9rem;gap:10px;align-items:baseline;padding:0 18px}
+.r-cols{padding-top:10px;padding-bottom:6px}
+.r-cols span{font-family:var(--mono);font-size:.64rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.r-cols span:not(:first-child),.r-row > .num{text-align:right;white-space:nowrap}
+.r-row{padding-top:9px;padding-bottom:9px;border-top:1px solid color-mix(in srgb, var(--rule) 60%, transparent)}
+.r-name{min-width:0}
+.r-name .given{font-family:var(--mono);font-size:.78rem;overflow-wrap:anywhere;line-height:1.35}
+.r-name .known{font-size:.76rem;color:var(--muted);margin-top:2px}
+.r-row.solvent{color:var(--muted)}
+.r-row.solvent .given{text-decoration:line-through;text-decoration-color:var(--rule)}
+.r-row .na{color:var(--muted);font-size:.74rem;text-align:right;grid-column:2 / -1}
+.cell{border-radius:3px;transition:background-color .2s, box-shadow .2s}
+.receipt[data-stage="1"] .s1,.receipt[data-stage="2"] .s2,.receipt[data-stage="3"] .s3,.receipt[data-stage="4"] .s4{background:var(--accent-soft);box-shadow:0 0 0 4px var(--accent-soft)}
+.r-foot{border-top:1px dashed var(--rule);margin-top:4px;padding:12px 18px 18px;display:grid;gap:6px}
+.r-line{display:flex;justify-content:space-between;gap:12px;font-size:.82rem}
+.r-total{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:6px;padding-top:10px;border-top:1px solid var(--rule)}
+.r-total .big{font-family:var(--display);font-size:2rem;color:var(--accent);font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.stages{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:22px}
+.stages button{font:inherit;font-size:.8rem;text-align:left;border:1px solid var(--hero-rule);background:rgba(255,255,255,.06);color:var(--hero-muted);border-radius:12px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:8px 10px;cursor:pointer;line-height:1.25;transition:border-color .15s,color .15s,background-color .15s}
+.stages button b{display:block;font-weight:600;font-size:.68rem;letter-spacing:.06em;margin-bottom:2px}
+.stages button:hover{color:var(--hero-fg);background:rgba(255,255,255,.12)}
+.stages button[aria-pressed="true"]{color:#111;border-color:var(--hero-fg);background:var(--hero-fg)}
+.stages button[aria-pressed="true"] b{color:var(--accent)}
+.stage-note{margin-top:12px;font-size:.86rem;color:var(--hero-muted);min-height:3.2em}
+@media (max-width:560px){
+  .r-cols{display:none}
+  .r-row{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:6px}
+  .r-name{grid-column:1 / -1}
+  .r-row > .num{text-align:left;font-size:.8rem}
+  .r-row > .num::before{content:attr(data-k);display:block;font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .r-row .na{grid-column:1 / -1;text-align:left}
+  .stages{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* stats */
+.stats{border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.stats .wrap{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.stat{padding-block:22px;padding-right:16px;border-right:1px solid var(--rule)}
+.stat+.stat{padding-left:20px}
+.stat:last-child{border-right:0}
+.stat .v{font-family:var(--display);font-weight:600;font-size:2.6rem;line-height:1;letter-spacing:-.04em}
+.stat .v small{font-size:.5em;color:var(--muted);margin-left:2px}
+.stat .k{margin-top:8px;font-size:.82rem;color:var(--muted);line-height:1.4}
+@media (max-width:760px){.stats .wrap{grid-template-columns:repeat(2,minmax(0,1fr))}.stat:nth-child(2){border-right:0}.stat:nth-child(3){padding-left:0}.stat:nth-child(-n+2){border-bottom:1px solid var(--rule)}}
+
+/* sections */
+section.block{padding-block:clamp(56px,8vw,104px) 0}
+.sec-head{display:grid;grid-template-columns:200px minmax(0,1fr);gap:24px;margin-bottom:36px}
+.sec-head .label{padding-top:12px}
+@media (max-width:760px){.sec-head{grid-template-columns:1fr;gap:10px}.sec-head .label{padding-top:0}}
+.indent{margin-left:224px}
+@media (max-width:760px){.indent{margin-left:0}}
+
+/* task */
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--ink)}
+.step{padding:18px 18px 0 0}
+.step+.step{padding-left:18px;border-left:1px solid var(--rule)}
+.step .n{font-family:var(--mono);font-size:.75rem;color:var(--accent)}
+.step h3{margin-top:10px}
+.step p{margin-top:8px;font-size:.92rem;color:var(--muted)}
+.step .fail{margin-top:14px;padding-top:10px;border-top:1px dashed var(--rule);font-size:.82rem}
+.step .fail b{font-family:var(--mono);font-weight:500;font-size:.66rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:3px}
+@media (max-width:900px){.steps{grid-template-columns:repeat(2,minmax(0,1fr))}.step:nth-child(3){padding-left:0;border-left:0}.step:nth-child(n+3){margin-top:22px;border-top:1px solid var(--rule)}}
+@media (max-width:520px){.steps{grid-template-columns:1fr}.step,.step+.step{padding-left:0;border-left:0}.step+.step{margin-top:22px;border-top:1px solid var(--rule)}}
+
+.formulas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:44px}
+@media (max-width:760px){.formulas{grid-template-columns:1fr}}
+.formula{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius);padding:22px 24px;min-width:0}
+.formula .eq{font-family:"Times New Roman", "STIX Two Text", Times, serif;font-size:1.35rem;margin:16px 0 14px;display:flex;align-items:center;gap:10px;white-space:nowrap;overflow-x:auto;padding-bottom:4px}
+.frac{display:inline-grid;text-align:center;font-size:.92em;line-height:1.25}
+.frac>span:first-child{border-bottom:1px solid var(--ink);padding:0 6px 2px}
+.frac>span:last-child{padding:2px 6px 0}
+.formula p{font-size:.88rem;color:var(--muted)}
+.formula i{font-family:"Times New Roman", "STIX Two Text", Times, serif;font-size:1.05em}
+
+/* leaderboard */
+.controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin-bottom:22px}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--rule);border-radius:999px;padding:3px;background:var(--surface)}
+.seg button{font:inherit;font-size:.82rem;border:0;background:transparent;color:var(--muted);padding:6px 13px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.seg button:hover:not([aria-pressed="true"]){color:var(--ink)}
+.seg button:disabled{opacity:.4;cursor:not-allowed}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.board{position:relative}
+.lb-row{display:grid;grid-template-columns:150px minmax(0,1fr) 3.6rem;gap:14px;align-items:center;height:30px}
+.lb-name{font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-track{position:relative;height:100%}
+.lb-bar{position:absolute;left:0;top:8px;bottom:8px;border-radius:0 2px 2px 0;transition:width .45s cubic-bezier(.2,.7,.2,1)}
+.lb-val{text-align:right;font-size:.84rem}
+.lb-row.human .lb-name{font-weight:600}
+.lb-row.human .lb-bar{background:transparent;border:1px solid var(--ink);border-left:0}
+.lb-axis{display:grid;grid-template-columns:150px minmax(0,1fr) 3.6rem;gap:14px;margin-top:6px}
+.lb-axis .ticks{position:relative;height:18px;border-top:1px solid var(--rule)}
+.lb-axis .ticks span{position:absolute;top:4px;transform:translateX(-50%);font-family:var(--mono);font-size:.66rem;color:var(--muted)}
+.lb-grid{position:absolute;inset:0 calc(3.6rem + 14px) 24px calc(150px + 14px);pointer-events:none}
+.lb-grid i{position:absolute;top:0;bottom:0;width:1px;background:color-mix(in srgb, var(--rule) 60%, transparent)}
+.lb-grid .hum{background:none;border-left:1px dashed var(--ink);opacity:.55;transition:left .45s cubic-bezier(.2,.7,.2,1)}
+.group-gap{height:10px}
+@media (max-width:560px){.lb-row,.lb-axis{grid-template-columns:104px minmax(0,1fr) 3rem;gap:8px}.lb-grid{inset:0 calc(3rem + 8px) 24px calc(104px + 8px)}.lb-name{font-size:.78rem}}
+.board-note{margin-top:16px;font-size:.82rem;color:var(--muted);max-width:80ch}
+details.full{margin-top:26px;border-top:1px solid var(--rule)}
+details.full summary{cursor:pointer;padding:14px 0;font-size:.9rem;font-weight:500;list-style:none;display:flex;align-items:center;gap:8px}
+details.full summary::-webkit-details-marker{display:none}
+details.full summary::before{content:"+";font-family:var(--mono);color:var(--accent);width:1ch}
+details.full[open] summary::before{content:"−"}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--rule);border-radius:14px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.8rem;min-width:880px}
+th,td{padding:7px 9px;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--surface)}
+thead th{font-family:var(--mono);font-weight:500;font-size:.66rem;letter-spacing:.05em;color:var(--muted);border-bottom:1px solid var(--rule)}
+thead tr:first-child th{color:var(--ink);font-size:.7rem}
+tbody td{font-family:var(--mono);font-variant-numeric:tabular-nums;border-top:1px solid color-mix(in srgb, var(--rule) 55%, transparent)}
+tbody td:first-child{font-family:var(--body);font-size:.84rem}
+td.best{color:var(--accent);font-weight:500}
+tr.fam td{font-family:var(--body);font-style:italic;color:var(--muted);text-align:left;padding-top:12px}
+.colgroup-start{border-left:1px solid var(--rule)}
+
+/* findings */
+.findings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+@media (max-width:860px){.findings{grid-template-columns:1fr}}
+.finding{background:var(--surface);border:1px solid var(--rule);border-radius:var(--radius);padding:28px 28px 24px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.finding h3{font-family:var(--display);font-weight:600;font-size:1.45rem;line-height:1.18;letter-spacing:-.022em}
+.finding p{font-size:.9rem;color:var(--muted)}
+.finding .fig{margin-top:6px}
+.cap{font-size:.74rem;color:var(--muted);margin-top:4px}
+/* diverging bars */
+.div-row{display:grid;grid-template-columns:96px minmax(0,1fr) 3.2rem;gap:10px;align-items:center;height:26px;font-size:.82rem}
+.div-track{position:relative;height:12px}
+.div-track::before{content:"";position:absolute;top:-7px;bottom:-7px;left:25%;width:1px;background:var(--ink);opacity:.5}
+.div-bar{position:absolute;top:0;bottom:0;background:var(--fam-open);border-radius:1px}
+.div-bar.neg{background:var(--warn)}
+.div-row .num{text-align:right;font-size:.78rem}
+/* dumbbell */
+.db-row{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;align-items:center;height:28px;font-size:.82rem}
+.db-track{position:relative;height:100%}
+.db-track::before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:var(--rule)}
+.db-line{position:absolute;top:calc(50% - 1px);height:3px;background:var(--warn);opacity:.35;border-radius:2px}
+.db-dot{position:absolute;top:50%;width:11px;height:11px;border-radius:50%;transform:translate(-50%,-50%)}
+.db-dot.a{background:var(--surface);border:2px solid var(--ink)}
+.db-dot.b{background:var(--warn)}
+.db-axis{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px}
+.db-axis div{position:relative;height:16px}
+.db-axis span{position:absolute;transform:translateX(-50%);font-family:var(--mono);font-size:.64rem;color:var(--muted)}
+.db-legend{display:flex;gap:14px;font-size:.76rem;color:var(--muted)}
+.db-legend span{display:inline-flex;align-items:center;gap:6px}
+.db-legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+/* line chart */
+svg.chart{width:100%;height:auto;display:block;overflow:visible}
+svg.chart .grid{stroke:var(--rule);stroke-width:1}
+svg.chart .axis-t{fill:var(--muted);font-family:var(--mono);font-size:10px}
+svg.chart .line{fill:none;stroke:var(--accent);stroke-width:2}
+svg.chart .area{fill:var(--accent);opacity:.08}
+svg.chart .pt{fill:var(--surface);stroke:var(--accent);stroke-width:2}
+svg.chart .pt.first{fill:var(--accent)}
+svg.chart .val{fill:var(--ink);font-family:var(--mono);font-size:11px}
+/* recognition */
+.rc{display:grid;gap:14px}
+.rc-row{display:grid;grid-template-columns:minmax(0,1fr) repeat(3,4.2rem);gap:10px;align-items:end;padding-bottom:12px;border-bottom:1px solid var(--rule)}
+.rc-row:last-child{border-bottom:0}
+.rc-row .m{font-size:.9rem}
+.rc-row .c{text-align:right}
+.rc-row .c .v{font-family:var(--display);font-weight:600;font-size:1.6rem;line-height:1;letter-spacing:-.03em}
+.rc-row .c .v.zero{color:var(--warn)}
+.rc-row .c .k{font-family:var(--mono);font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
+/* release */
+.release{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}
+@media (max-width:860px){.release{grid-template-columns:1fr}}
+.code{position:relative;background:var(--code-bg);border-radius:14px;border:1px solid var(--rule);min-width:0}
+.code pre{margin:0;padding:16px 18px;overflow-x:auto;font-family:var(--mono);font-size:.8rem;line-height:1.65}
+.code .c{color:var(--muted)}
+.copy{position:absolute;top:10px;right:10px;font:inherit;font-size:.75rem;font-weight:500;border:1px solid var(--rule);background:var(--surface);color:var(--muted);border-radius:999px;padding:4px 12px;cursor:pointer}
+.copy:hover{color:var(--ink);border-color:var(--muted)}
+.kv{display:grid;grid-template-columns:9.5rem minmax(0,1fr);border-top:1px solid var(--rule);font-size:.88rem}
+.kv>*{padding:10px 0;border-bottom:1px solid var(--rule)}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0}
+.ref-table{margin-top:18px;width:100%;min-width:0;font-size:.82rem}
+.ref-table th,.ref-table td{position:static;background:none}
+.note{margin-top:14px;font-size:.84rem;color:var(--muted)}
+
+/* cite + footer */
+.cite .code pre{white-space:pre;font-size:.78rem}
+footer{margin-top:clamp(64px,9vw,112px);border-top:1px solid var(--rule)}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px 40px;padding-block:28px 40px;font-size:.8rem;color:var(--muted)}
+footer p{max-width:70ch}
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="Sections">
+  <div class="wrap">
+    <a class="wordmark" href="#top" aria-label="ChemCost home"><span class="el sm" aria-hidden="true"><span class="z">6</span>C</span><span aria-hidden="true">hem</span><span class="el sm" aria-hidden="true" style="margin-left:.08em"><span class="z">27</span>Co</span><span aria-hidden="true">st</span></a>
+    <ul>
+      <li><a href="#task">Task</a></li>
+      <li><a href="#results">Results</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#data">Data &amp; code</a></li>
+      <li><a href="#cite">Cite</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="lockup" role="img" aria-label="ChemCost">
+        <span class="el" aria-hidden="true"><span class="z">6</span>C<span class="m">12.011</span></span><span class="rest" aria-hidden="true">hem</span>
+        <span class="el" aria-hidden="true" style="margin-left:.1em"><span class="z">27</span>Co<span class="m">58.933</span></span><span class="rest" aria-hidden="true">st</span>
+      </div>
+      <div class="venue"><i></i>NeurIPS 2026 · Evaluations &amp; Datasets Track</div>
+      <h1>Can agents <em>price</em> a reaction?</h1>
+      <p class="sub">Evaluating LLMs on chemical cost reasoning, with exact answers and no judge.</p>
+
+      <p class="authors">
+        <span>Yuyang Wu<sup>1*</sup></span>,
+        <span>Yue Huang<sup>2*</sup></span>,
+        <span>Shuaike Shen<sup>1</sup></span>,
+        <span>Xujian Wang<sup>1</sup></span>,
+        <span>Shuhao Zhang<sup>1</sup></span>,
+        <span>Qiyao Xue<sup>3</sup></span>,
+        <span>Weichen Liu<sup>4</sup></span>,
+        <span>Runtian Gao<sup>1</sup></span>,
+        <span>Jian Ma<sup>1†</sup></span>,
+        <span>Xiangliang Zhang<sup>2†</sup></span>,
+        <span>Olexandr Isayev<sup>1†</sup></span>
+      </p>
+      <p class="affil"><sup>1</sup>Carnegie Mellon University &nbsp; <sup>2</sup>University of Notre Dame &nbsp; <sup>3</sup>University of North Carolina at Chapel Hill &nbsp; <sup>4</sup>University of Pittsburgh</p>
+      <p class="notes">* Equal contribution &nbsp; † Corresponding authors</p>
+
+      <div class="links">
+        <a class="btn" id="paper-link" aria-disabled="true">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 1.5h5.5L13 5v9.5H4z"/><path d="M9.5 1.5V5H13M6 8.5h5M6 11h5"/></svg>
+          <span>Paper · soon</span>
+        </a>
+        <a class="btn primary" href="https://github.com/HeinzVonHank/ChemCost" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M5.5 4.5 2 8l3.5 3.5M10.5 4.5 14 8l-3.5 3.5"/></svg>
+          <span>Code</span>
+        </a>
+        <a class="btn" href="https://huggingface.co/datasets/YoungerWu/ChemCost" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><ellipse cx="8" cy="3.5" rx="5.5" ry="2"/><path d="M2.5 3.5v9c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2v-9M2.5 8c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2"/></svg>
+          <span>Dataset</span>
+        </a>
+        <a class="btn" href="#cite">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 4h4v4c0 2-1 3.5-3 4M9 4h4v4c0 2-1 3.5-3 4"/></svg>
+          <span>BibTeX</span>
+        </a>
+      </div>
+    </div>
+
+    <div>
+      <div class="receipt" id="receipt" data-stage="0" aria-label="Worked example: procurement receipt for record CHEMCOST-0001">
+        <div class="r-head">
+          <div>
+            <div class="label">Worked example · CHEMCOST-0001</div>
+            <div class="t">Amide coupling, costed at 1 mmol</div>
+          </div>
+          <div class="label" style="text-align:right">Product C<sub>18</sub>H<sub>21</sub>NO<sub>2</sub><br>283.37 g/mol</div>
+        </div>
+        <div class="r-cols" aria-hidden="true"><span>Name as given</span><span>Quotes</span><span>Needed</span><span>Pack</span><span>Cost</span></div>
+
+        <div class="r-row">
+          <div class="r-name cell s1"><div class="given">2-phenyl-2-methylpropanoic acid</div><div class="known">2-phenylisobutyric acid · scale reference</div></div>
+          <div class="num cell s2" data-k="Quotes">49</div>
+          <div class="num cell s3" data-k="Needed">164.2 mg</div>
+          <div class="num cell s3" data-k="Pack">1 × 10 g</div>
+          <div class="num cell s4" data-k="Cost">$5.50</div>
+        </div>
+        <div class="r-row">
+          <div class="r-name cell s1"><div class="given">Aniline, 4-methoxy-3-methyl-</div><div class="known">3-methyl-<wbr>4-methoxyaniline</div></div>
+          <div class="num cell s2" data-k="Quotes">50</div>
+          <div class="num cell s3" data-k="Needed">137.2 mg</div>
+          <div class="num cell s3" data-k="Pack">1 × 1 g</div>
+          <div class="num cell s4" data-k="Cost">$14.10</div>
+        </div>
+        <div class="r-row">
+          <div class="r-name cell s1"><div class="given">N,N′-dicyclohexylmethanediimine</div><div class="known">DCC · 1.5 equiv</div></div>
+          <div class="num cell s2" data-k="Quotes">81</div>
+          <div class="num cell s3" data-k="Needed">309.5 mg</div>
+          <div class="num cell s3" data-k="Pack">1 × 5 g</div>
+          <div class="num cell s4" data-k="Cost">$4.84</div>
+        </div>
+        <div class="r-row">
+          <div class="r-name cell s1"><div class="given">3H-1,2,3-Triazolo(4,5-b)pyridine, 3-hydroxy-</div><div class="known">HOAt · 1.5 equiv</div></div>
+          <div class="num cell s2" data-k="Quotes">81</div>
+          <div class="num cell s3" data-k="Needed">204.2 mg</div>
+          <div class="num cell s3" data-k="Pack">1 × 1 g</div>
+          <div class="num cell s4" data-k="Cost">$6.16</div>
+        </div>
+        <div class="r-row solvent">
+          <div class="r-name cell s1"><div class="given">DMF</div><div class="known">solvent</div></div>
+          <div class="na">not purchased</div>
+        </div>
+
+        <div class="r-foot">
+          <div class="r-line cell s4"><span>Packs bought</span><span class="num">$30.60</span></div>
+          <div class="r-line cell s4"><span>Product at 1 mmol, 78.9% yield</span><span class="num">0.2235 g</span></div>
+          <div class="r-total"><span class="label">Label · USD per gram of product</span><span class="big">$136.91</span></div>
+        </div>
+      </div>
+
+      <div class="stages" role="group" aria-label="Highlight a stage of the task">
+        <button type="button" data-stage="1" aria-pressed="false"><b>1 · GROUND</b>Resolve names</button>
+        <button type="button" data-stage="2" aria-pressed="false"><b>2 · RETRIEVE</b>Supplier quotes</button>
+        <button type="button" data-stage="3" aria-pressed="false"><b>3 · SELECT</b>Whole packs</button>
+        <button type="button" data-stage="4" aria-pressed="false"><b>4 · AGGREGATE</b>Cost per gram</button>
+      </div>
+      <p class="stage-note" id="stage-note">A real record from the released benchmark. Pick a stage to see which part of the receipt the agent has to get right.</p>
+    </div>
+  </div>
+  <p class="photo-credit">Photo: <a href="https://commons.wikimedia.org/wiki/File:Chemical_Store.jpg" target="_blank" rel="noopener">“Chemical Store”</a> by Lekhaki, <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener">CC BY-SA 4.0</a></p>
+</header>
+
+<div class="stats" aria-label="Benchmark at a glance">
+  <div class="wrap">
+    <div class="stat"><div class="v num">1,427</div><div class="k">reactions with exact, deterministic cost labels</div></div>
+    <div class="stat"><div class="v num">68</div><div class="k">multi-step synthesis routes, two to six steps</div></div>
+    <div class="stat"><div class="v num">50.6<small>%</small></div><div class="k">best agent within 25% of the true cost</div></div>
+    <div class="stat"><div class="v num">66.9<small>%</small></div><div class="k">expert human reference with the same tools</div></div>
+  </div>
+</div>
+
+<main>
+<section class="block" id="task">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="label">The task</div>
+      <div>
+        <h2>From a reaction description to a dollar figure per gram.</h2>
+        <div class="prose" style="margin-top:16px">
+          <p>An agent reads a reaction as a chemist wrote it down and returns one number: what it costs to buy the material for the run at a 1 mmol scale, per gram of product. Supplier prices are never in the prompt and cannot be recalled reliably, so the answer has to come from the tools. Because the label is computed from a frozen supplier snapshot under a fixed rule, every prediction is scored exactly.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="steps indent">
+      <div class="step">
+        <div class="n">01</div>
+        <h3>Ground the names</h3>
+        <p>Map each name to one structure. Abbreviations collide: TEA can mean triethylamine or triethanolamine.</p>
+        <div class="fail"><b>Typical failure</b>Gives up when a name does not resolve and returns nothing.</div>
+      </div>
+      <div class="step">
+        <div class="n">02</div>
+        <h3>Retrieve quotes</h3>
+        <p>Pull every pack-level quote for each chemical: supplier, pack size, price, reported purity.</p>
+        <div class="fail"><b>Typical failure</b>Guesses a price from memory, then lands 2× off.</div>
+      </div>
+      <div class="step">
+        <div class="n">03</div>
+        <h3>Select packs</h3>
+        <p>Work out the mass each component needs, then buy whole packs of qualifying purity that cover it.</p>
+        <div class="fail"><b>Typical failure</b>Reads 0.23 g as 230 g, an error of three orders of magnitude.</div>
+      </div>
+      <div class="step">
+        <div class="n">04</div>
+        <h3>Aggregate</h3>
+        <p>Sum the packs bought, leave out solvents, and divide by the grams of product the run yields.</p>
+        <div class="fail"><b>Typical failure</b>Drops the palladium catalyst and comes in 3.6× under.</div>
+      </div>
+    </div>
+
+    <div class="formulas indent">
+      <div class="formula">
+        <div class="label">Ground-truth label</div>
+        <div class="eq"><i>c</i> = <span class="frac"><span>Σ<sub><i>i</i> ∉ solvent</sub> <i>q<sub>i</sub></i></span><span><i>M<sub>P</sub></i> · 10<sup>−3</sup> · <i>y</i>/100</span></span></div>
+        <p><i>q<sub>i</sub></i> is the price of the whole packs bought to cover component <i>i</i>'s required mass <i>m<sub>i</sub></i> = <i>e<sub>i</sub> M<sub>i</sub></i> · 10<sup>−3</sup> g. A pack is charged in full even when only part of it is used, so this is a procurement cost, not a consumption cost.</p>
+      </div>
+      <div class="formula">
+        <div class="label">Metric · cost tolerance accuracy</div>
+        <div class="eq">CTA@<i>k</i> = <span class="frac"><span>1</span><span><i>N</i></span></span> Σ<sub><i>j</i></sub> 𝟙 [ |<i>ĉ<sub>j</sub></i> − <i>c<sub>j</sub></i>| / <i>c<sub>j</sub></i> ≤ <i>k</i>% ]</div>
+        <p>The share of reactions priced within <i>k</i>% of the label. Refusals, unparsable answers and exhausted step budgets stay in the denominator. We report CTA@10 and CTA@25.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="results">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="label">Results</div>
+      <div>
+        <h2>Tool access is necessary, and still not enough.</h2>
+        <div class="prose" style="margin-top:16px">
+          <p>Twelve models run as ReAct agents with the same four tools and a 40-step budget. The best reach about half the reactions within 25%, below the human reference. Noise in how the reaction is written, especially free-text or OCR-style formatting, pulls every model down further.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="indent">
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Input setting" id="setting-seg">
+          <button type="button" data-set="clean" aria-pressed="true">Clean</button>
+          <button type="button" data-set="name" aria-pressed="false">+Name</button>
+          <button type="button" data-set="qty" aria-pressed="false">+Qty</button>
+          <button type="button" data-set="miss" aria-pressed="false">+Miss</button>
+          <button type="button" data-set="fmt" aria-pressed="false">+Fmt</button>
+          <button type="button" data-set="all" aria-pressed="false">All noise</button>
+        </div>
+        <div class="seg" role="group" aria-label="Metric" id="metric-seg">
+          <button type="button" data-metric="c25" aria-pressed="true">CTA@25</button>
+          <button type="button" data-metric="c10" aria-pressed="false">CTA@10</button>
+        </div>
+      </div>
+      <div class="legend" style="margin-bottom:14px">
+        <span><i style="background:var(--fam-closed)"></i>Closed models</span>
+        <span><i style="background:var(--fam-open)"></i>Open-weight</span>
+        <span><i style="background:var(--fam-chem)"></i>Chemistry-specialized</span>
+        <span><i style="border:1px dashed var(--ink);background:transparent"></i>Human reference</span>
+      </div>
+      <div class="board" id="board" aria-live="polite"></div>
+      <p class="board-note" id="board-note"></p>
+
+      <details class="full">
+        <summary>Full results table: precision, recall and CTA in every setting</summary>
+        <div class="table-wrap"><table id="full-table"></table></div>
+        <p class="board-note">Pre. and Rec. compare the components an agent lists with the ones that must be bought. Bold marks the best automated agent in each column; the human row is a reference and is not ranked.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="findings">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="label">Findings</div>
+      <div>
+        <h2>Where procurement reasoning breaks.</h2>
+        <div class="prose" style="margin-top:16px">
+          <p>Every trajectory is logged, so a wrong number can be traced to the stage that produced it.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="findings">
+      <article class="finding">
+        <div class="label">Tool use</div>
+        <h3>Failed runs make more calls, not fewer.</h3>
+        <p>Across models, average tool calls track CTA@25 closely (<span class="num">r = 0.98</span>), mostly because weak models barely enter the workflow. Within strong models, failures come with extra calls, concentrated in supplier-quote retrieval that never converges. GPT-5 fails the other way, stopping early.</p>
+        <div class="fig" id="fig-calls" role="img" aria-label="Extra tool calls in failed versus successful trajectories: Qwen3.5-Plus plus 52 percent, DeepSeek V4 Pro plus 38, Sonnet 4.6 plus 36, Kimi K2.5 plus 7, GPT-5 minus 14."></div>
+        <p class="cap">Tool calls in failed trajectories relative to successful ones.</p>
+      </article>
+
+      <article class="finding">
+        <div class="label">Input noise</div>
+        <h3>Formatting is what makes agents give up.</h3>
+        <p>Rewriting a reaction as prose or OCR-damaged text raises abstention by <span class="num">26.3</span> points on average. No other single kind of noise adds more than 6. The causes differ by model: exhausted step budgets, unfinished work, or outright refusal.</p>
+        <div class="fig" id="fig-abst" role="img" aria-label="Abstention rate, clean versus format noise: DeepSeek V4 Pro 7.4 to 29.8 percent, Qwen3.5-Plus 27.3 to 53.7, Sonnet 4.6 28.9 to 57.0, Kimi K2.5 35.5 to 69.4, GPT-5 54.5 to 75.2."></div>
+        <div class="db-legend"><span><i style="border:2px solid var(--ink);background:var(--surface)"></i>Clean</span><span><i style="background:var(--warn)"></i>+Fmt</span></div>
+      </article>
+
+      <article class="finding">
+        <div class="label">Reaction structure</div>
+        <h3>Each synthesis step costs accuracy.</h3>
+        <p>Route depth is the strongest difficulty axis. Every model loses roughly 24 to 25 points of CTA@25 going from single-step to deep routes, while the number of components in a single step matters much less.</p>
+        <div class="fig">
+          <svg class="chart" id="fig-depth" viewBox="0 0 340 190" role="img" aria-label="CTA@25 by number of synthesis steps: 1 step 42 percent, 2 steps 29, 3 steps 16, 4 steps 11, 5 steps 13."></svg>
+        </div>
+        <p class="cap">CTA@25 by number of synthesis steps, pooled across agents (paper setting).</p>
+      </article>
+
+      <article class="finding">
+        <div class="label">Domain models</div>
+        <h3>Knowing the chemicals is not the same as pricing them.</h3>
+        <p>Chemistry-tuned models name the right components with high precision and still score zero, because they rarely call the tools and estimate prices from memory instead.</p>
+        <div class="rc fig">
+          <div class="rc-row">
+            <div class="m">ChemDFM-v2.0-14B</div>
+            <div class="c"><div class="v num">93.9</div><div class="k">Precision</div></div>
+            <div class="c"><div class="v num">49.5</div><div class="k">Recall</div></div>
+            <div class="c"><div class="v num zero">0.0</div><div class="k">CTA@25</div></div>
+          </div>
+          <div class="rc-row">
+            <div class="m">ChemLLM-20B</div>
+            <div class="c"><div class="v num">89.0</div><div class="k">Precision</div></div>
+            <div class="c"><div class="v num">54.1</div><div class="k">Recall</div></div>
+            <div class="c"><div class="v num zero">0.0</div><div class="k">CTA@25</div></div>
+          </div>
+        </div>
+        <p class="cap">Clean setting, percent.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="data">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="label">Data &amp; code</div>
+      <div>
+        <h2>Run it on your own agent.</h2>
+        <div class="prose" style="margin-top:16px">
+          <p>The release includes the evaluation harness, every record with its label and selected packs, and the frozen pricing database the labels come from. One script recomputes every label from that database.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="release indent" style="margin-left:0">
+      <div class="code">
+        <button class="copy" type="button" data-copy="install">Copy</button>
+<pre id="install"><span class="c"># install and fetch data</span>
+git clone https://github.com/HeinzVonHank/ChemCost.git
+cd ChemCost
+pip install -e ".[eval,tests]"
+python scripts/download_data.py
+python scripts/verify_labels.py
+
+<span class="c"># evaluate a ReAct agent</span>
+python scripts/run_evaluation.py \
+  --agent react --provider anthropic \
+  --model claude-sonnet-4-6 \
+  --output results/react.json</pre>
+      </div>
+      <div>
+        <dl class="kv">
+          <dt>Records</dt><dd><span class="num">1,427</span> reactions: <span class="num">1,359</span> single-step, <span class="num">68</span> multi-step routes</dd>
+          <dt>Pricing</dt><dd>Frozen 2026 snapshot of pack-level supplier quotes, shipped as SQLite</dd>
+          <dt>Tools</dt><dd><code class="num">get_supplier_quotes</code>, <code class="num">calculate</code></dd>
+          <dt>Metadata</dt><dd>Croissant, served by Hugging Face</dd>
+          <dt>License</dt><dd>Code MIT · data CC BY-SA 4.0</dd>
+        </dl>
+        <p class="note">The public release uses a harder view than the paper. Agents see component names, often systematic or less familiar synonyms, and the amounts used in the lab. Roles, equivalents, molecular weights and yields are withheld, and there is no name-search tool. Reference runs on this view:</p>
+        <table class="ref-table">
+          <thead><tr><th>Model (Codex CLI, two tools)</th><th>CTA@10</th><th>CTA@25</th><th>Multi-step CTA@10</th></tr></thead>
+          <tbody>
+            <tr><td>gpt-5.6-luna</td><td>64.2</td><td>72.7</td><td>41.2</td></tr>
+            <tr><td>gpt-6-luna</td><td>47.5</td><td>57.7</td><td>22.1</td></tr>
+          </tbody>
+        </table>
+        <p class="note">Prices are a research snapshot and are not meant for real purchasing decisions.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block cite" id="cite">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="label">Cite</div>
+      <div><h2>BibTeX</h2></div>
+    </div>
+    <div class="code indent">
+      <button class="copy" type="button" data-copy="bibtex">Copy</button>
+<pre id="bibtex">@inproceedings{wu2026chemcost,
+  title     = {Can Agents Price a Reaction? Evaluating {LLMs} on Chemical Cost Reasoning},
+  author    = {Wu, Yuyang and Huang, Yue and Shen, Shuaike and Wang, Xujian and Zhang, Shuhao and
+               Xue, Qiyao and Liu, Weichen and Gao, Runtian and Ma, Jian and Zhang, Xiangliang and
+               Isayev, Olexandr},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS),
+               Evaluations and Datasets Track},
+  year      = {2026}
+}</pre>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Supported by the U.S. National Science Foundation (Awards #2607594 and CHE-2202693) and ACCESS allocations on Bridges-2 (PSC) and Delta (NCSA).</p>
+    <p class="num">ChemCost · 2026</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // ---- Paper link: fill in once the proceedings or arXiv version is public.
+  var PAPER_URL = "";
+  var pl = document.getElementById("paper-link");
+  if (PAPER_URL) { pl.href = PAPER_URL; pl.target = "_blank"; pl.rel = "noopener"; pl.removeAttribute("aria-disabled"); pl.querySelector("span").textContent = "Paper"; }
+
+  // ---- Receipt stages
+  var notes = {
+    0: "A real record from the released benchmark. Pick a stage to see which part of the receipt the agent has to get right.",
+    1: "Ground: the agent is given systematic or less familiar names. “N,N′-dicyclohexylmethanediimine” is DCC, and the bracketed triazolopyridine is HOAt. DMF is a solvent and is not bought.",
+    2: "Retrieve: each chemical has dozens of quotes across suppliers, pack sizes and purities. Only packs at ≥95% purity qualify.",
+    3: "Select: required mass is equivalents × molecular weight at 1 mmol. The cheapest way to cover it with whole packs wins, even if most of the pack goes unused.",
+    4: "Aggregate: $30.60 of packs divided by 0.2235 g of product gives $136.91 per gram."
+  };
+  var receipt = document.getElementById("receipt");
+  var stageBtns = document.querySelectorAll(".stages button");
+  var note = document.getElementById("stage-note");
+  stageBtns.forEach(function(b){
+    b.addEventListener("click", function(){
+      var s = b.getAttribute("data-stage");
+      var on = receipt.getAttribute("data-stage") === s ? "0" : s;
+      receipt.setAttribute("data-stage", on);
+      stageBtns.forEach(function(x){ x.setAttribute("aria-pressed", x.getAttribute("data-stage") === on ? "true" : "false"); });
+      note.textContent = notes[on];
+    });
+  });
+
+  // ---- Main results (paper Table 1). Order per setting: [pre, rec, c10] ; clean also c25.
+  var H = {name:"Human", fam:"human", clean:{c10:57.0,c25:66.9}, name_:{c10:55.3}, qty:{c10:55.0}, miss:{c10:43.3}, fmt:{c10:46.7}, all:{c10:36.6}};
+  var M = [
+    ["Qwen3.5-Plus","closed",[100.0,54.3,34.6,50.6],[98.2,51.8,30.9],[99.6,57.9,34.6],[99.6,54.1,32.1],[69.9,20.4,18.5],[72.2,19.7,19.8]],
+    ["GPT-5","closed",[93.5,32.8,24.7,38.3],[88.4,31.2,23.5],[94.2,29.6,23.5],[92.2,29.6,22.2],[59.6,7.0,13.6],[65.8,5.9,11.1]],
+    ["Claude Sonnet 4.6","closed",[60.2,51.7,24.3,34.6],[57.9,33.0,23.5],[65.6,37.6,16.1],[60.3,32.6,22.2],[75.9,20.4,11.1],[71.1,16.1,12.3]],
+    ["Gemini 2.5 Flash","closed",[98.7,47.1,21.8,32.2],[94.4,39.0,23.0],[97.2,36.0,13.8],[92.6,31.9,18.4],[91.4,15.8,10.3],[92.0,9.6,10.3]],
+    ["GPT-5.4 Mini","closed",[94.1,43.8,5.8,11.5],[89.1,36.2,5.8],[96.0,35.8,9.2],[93.7,28.1,4.6],[82.6,16.5,1.1],[86.1,7.7,0.0]],
+    ["DeepSeek V4 Pro","open",[59.9,38.5,37.0,49.4],[59.2,39.1,38.3],[64.2,42.5,37.0],[59.0,38.5,34.6],[75.5,27.8,22.2],[50.9,25.3,19.8]],
+    ["Kimi K2.5","open",[84.4,44.1,24.7,37.0],[68.7,28.7,21.0],[79.7,38.7,29.6],[74.2,36.2,25.9],[84.7,17.0,12.3],[83.3,14.2,12.3]],
+    ["Qwen3-14B","open",[98.2,12.4,4.9,9.9],[93.2,12.4,4.9],[98.3,13.1,6.2],[97.9,10.9,1.2],[100.0,0.4,0.0],[100.0,0.2,0.0]],
+    ["Qwen3-235B-A22B","open",[100.0,23.1,3.7,6.2],[96.8,21.5,3.7],[98.9,20.8,4.9],[90.4,17.0,3.7],[62.5,11.5,3.7],[63.9,10.6,0.0]],
+    ["LlaSMol-7B","chem",[57.1,5.2,1.2,1.2],[81.5,27.8,0.0],[83.1,30.5,0.0],[0.0,0.0,0.0],[0.0,0.0,0.0],[0.0,0.0,0.0]],
+    ["ChemDFM-v2.0-14B","chem",[93.9,49.5,0.0,0.0],[85.1,46.6,0.0],[96.6,52.5,0.0],[91.6,39.4,1.2],[59.6,32.8,0.0],[67.7,25.6,0.0]],
+    ["ChemLLM-20B","chem",[89.0,54.1,0.0,0.0],[86.3,41.2,0.0],[88.8,51.8,0.0],[87.5,58.4,0.0],[87.2,30.8,0.0],[79.5,30.8,0.0]]
+  ];
+  var SETS = ["clean","name","qty","miss","fmt","all"];
+  var SET_LABEL = {clean:"Clean",name:"+Name",qty:"+Qty",miss:"+Miss",fmt:"+Fmt",all:"All noise"};
+  var SET_DESC = {
+    clean:"Structured input exactly as recorded.",
+    name:"Chemical names swapped for aliases, abbreviations or systematic names.",
+    qty:"Quantities re-expressed as mol%, volumes or masses, or left vague (“excess”).",
+    miss:"Molecular weights, yields or roles removed from the input.",
+    fmt:"The reaction rewritten as free-text prose or OCR-damaged text.",
+    all:"All four perturbations applied together."
+  };
+  var FAM_COLOR = {closed:"var(--fam-closed)", open:"var(--fam-open)", chem:"var(--fam-chem)"};
+  var MAX = 70;
+  var state = {set:"clean", metric:"c25"};
+
+  function val(m, set, metric){
+    var idx = SETS.indexOf(set), a = m[2+idx];
+    if (set === "clean") return metric === "c25" ? a[3] : a[2];
+    return a[2];
+  }
+  function humanVal(set, metric){
+    if (set === "clean") return metric === "c25" ? H.clean.c25 : H.clean.c10;
+    return ({name:H.name_,qty:H.qty,miss:H.miss,fmt:H.fmt,all:H.all})[set].c10;
+  }
+  function pct(v){ return Math.max(0, Math.min(100, v / MAX * 100)); }
+
+  var board = document.getElementById("board");
+  function render(){
+    var metric = state.set === "clean" ? state.metric : "c10";
+    var rows = M.map(function(m){ return {name:m[0], fam:m[1], v:val(m, state.set, metric)}; })
+                .sort(function(a,b){ return b.v - a.v || a.name.localeCompare(b.name); });
+    var best = rows[0].v;
+    var hv = humanVal(state.set, metric);
+    var html = '<div class="lb-grid" aria-hidden="true">';
+    for (var t = 0; t <= MAX; t += 10) html += '<i style="left:' + pct(t) + '%"></i>';
+    html += '<i class="hum" style="left:' + pct(hv) + '%"></i></div>';
+    html += '<div class="lb-row human"><div class="lb-name">Human reference</div><div class="lb-track"><div class="lb-bar" style="width:' + pct(hv) + '%"></div></div><div class="lb-val num">' + hv.toFixed(1) + '</div></div><div class="group-gap"></div>';
+    rows.forEach(function(r){
+      var color = (r.v === best && best > 0) ? "var(--accent)" : FAM_COLOR[r.fam];
+      html += '<div class="lb-row"><div class="lb-name" title="' + r.name + '">' + r.name + '</div><div class="lb-track"><div class="lb-bar" style="width:' + pct(r.v) + '%;background:' + color + '"></div></div><div class="lb-val num">' + r.v.toFixed(1) + '</div></div>';
+    });
+    html += '<div class="lb-axis" aria-hidden="true"><div></div><div class="ticks">';
+    for (var u = 0; u <= MAX; u += 10) html += '<span style="left:' + pct(u) + '%">' + u + '</span>';
+    html += '</div><div class="label" style="font-size:.6rem;padding-top:4px;text-align:right">%</div></div>';
+    board.innerHTML = html;
+    document.getElementById("board-note").textContent =
+      (metric === "c25" ? "CTA@25" : "CTA@10") + " · " + SET_LABEL[state.set] + ". " + SET_DESC[state.set] +
+      (state.set !== "clean" ? " Noise settings are scored at CTA@10, as in the paper." : "") +
+      " Paper evaluation setting: ReAct agents with name resolution, quote retrieval, molar mass and arithmetic tools.";
+    var mb = document.querySelectorAll("#metric-seg button");
+    mb.forEach(function(b){
+      b.disabled = state.set !== "clean" && b.getAttribute("data-metric") === "c25";
+      b.setAttribute("aria-pressed", b.getAttribute("data-metric") === metric ? "true" : "false");
+    });
+  }
+  document.querySelectorAll("#setting-seg button").forEach(function(b){
+    b.addEventListener("click", function(){
+      state.set = b.getAttribute("data-set");
+      document.querySelectorAll("#setting-seg button").forEach(function(x){ x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      render();
+    });
+  });
+  document.querySelectorAll("#metric-seg button").forEach(function(b){
+    b.addEventListener("click", function(){ if (b.disabled) return; state.metric = b.getAttribute("data-metric"); render(); });
+  });
+  render();
+
+  // ---- Full table
+  (function(){
+    var cols = [];
+    var head1 = '<tr><th rowspan="2">Model</th><th colspan="4" class="colgroup-start">Clean</th>';
+    var head2 = '<tr><th class="colgroup-start">Pre.</th><th>Rec.</th><th>C.10</th><th>C.25</th>';
+    SETS.slice(1).forEach(function(s){ head1 += '<th colspan="3" class="colgroup-start">' + SET_LABEL[s] + '</th>'; head2 += '<th class="colgroup-start">Pre.</th><th>Rec.</th><th>C.10</th>'; });
+    // best per column among models
+    var flat = M.map(function(m){ var r = m[2].slice(); for (var i = 3; i < 8; i++) r = r.concat(m[i]); return r; });
+    var bestCol = flat[0].map(function(_, j){ return Math.max.apply(null, flat.map(function(r){ return r[j]; })); });
+    var starts = {0:1,4:1,7:1,10:1,13:1,16:1};
+    var body = '<tr><td>Human reference</td>';
+    var hrow = ["","",H.clean.c10,H.clean.c25,"","",H.name_.c10,"","",H.qty.c10,"","",H.miss.c10,"","",H.fmt.c10,"","",H.all.c10];
+    hrow.forEach(function(v, j){ body += '<td' + (starts[j] ? ' class="colgroup-start"' : '') + '>' + (v === "" ? "—" : v.toFixed(1)) + '</td>'; });
+    body += '</tr>';
+    var famName = {closed:"Closed models", open:"Open-weight", chem:"Chemistry-specialized"};
+    var lastFam = "";
+    M.forEach(function(m, i){
+      if (m[1] !== lastFam){ body += '<tr class="fam"><td colspan="20">' + famName[m[1]] + '</td></tr>'; lastFam = m[1]; }
+      body += '<tr><td>' + m[0] + '</td>';
+      flat[i].forEach(function(v, j){
+        var isBest = (j === 2 || j === 3 || j === 6 || j === 9 || j === 12 || j === 15 || j === 18) && v === bestCol[j];
+        body += '<td class="' + (starts[j] ? 'colgroup-start ' : '') + (isBest ? 'best' : '') + '">' + v.toFixed(1) + '</td>';
+      });
+      body += '</tr>';
+    });
+    document.getElementById("full-table").innerHTML = '<thead>' + head1 + '</tr>' + head2 + '</tr></thead><tbody>' + body + '</tbody>';
+  })();
+
+  // ---- Finding 1: diverging bars, domain [-20, 60]
+  (function(){
+    var d = [["Qwen3.5-Plus",52],["DeepSeek V4 Pro",38],["Sonnet 4.6",36],["Kimi K2.5",7],["GPT-5",-14]];
+    var lo = -20, hi = 60, span = hi - lo, z = (0 - lo) / span * 100;
+    var html = "";
+    d.forEach(function(r){
+      var v = r[1], left = v < 0 ? (v - lo) / span * 100 : z, w = Math.abs(v) / span * 100;
+      html += '<div class="div-row"><div>' + r[0] + '</div><div class="div-track"><div class="div-bar' + (v < 0 ? ' neg' : '') + '" style="left:' + left + '%;width:' + w + '%"></div></div><div class="num">' + (v > 0 ? "+" : "−") + Math.abs(v) + '%</div></div>';
+    });
+    html += '<div class="db-axis"><div></div><div>';
+    [-20,0,20,40,60].forEach(function(t){ html += '<span style="left:' + ((t - lo) / span * 100) + '%">' + (t > 0 ? "+" : t < 0 ? "−" : "") + Math.abs(t) + '</span>'; });
+    html += '</div></div>';
+    document.getElementById("fig-calls").innerHTML = html;
+  })();
+
+  // ---- Finding 2: dumbbell, domain [0, 100]
+  (function(){
+    var d = [["DeepSeek V4 Pro",7.4,29.8],["Qwen3.5-Plus",27.3,53.7],["Sonnet 4.6",28.9,57.0],["Kimi K2.5",35.5,69.4],["GPT-5",54.5,75.2]];
+    var html = "";
+    d.forEach(function(r){
+      html += '<div class="db-row"><div>' + r[0] + '</div><div class="db-track" title="' + r[1] + '% → ' + r[2] + '%"><div class="db-line" style="left:' + r[1] + '%;width:' + (r[2] - r[1]) + '%"></div><div class="db-dot a" style="left:' + r[1] + '%"></div><div class="db-dot b" style="left:' + r[2] + '%"></div></div></div>';
+    });
+    html += '<div class="db-axis"><div></div><div>';
+    [0,25,50,75,100].forEach(function(t){ html += '<span style="left:' + t + '%">' + t + '%</span>'; });
+    html += '</div></div>';
+    document.getElementById("fig-abst").innerHTML = html;
+  })();
+
+  // ---- Finding 3: line chart
+  (function(){
+    var svg = document.getElementById("fig-depth");
+    var d = [42,29,16,11,13], L = 34, R = 326, T = 14, B = 160, ymax = 50;
+    function x(i){ return L + i * (R - L) / (d.length - 1); }
+    function y(v){ return B - v / ymax * (B - T); }
+    var s = "";
+    [0,10,20,30,40,50].forEach(function(t){ s += '<line class="grid" x1="' + L + '" x2="' + R + '" y1="' + y(t) + '" y2="' + y(t) + '"/><text class="axis-t" x="' + (L - 8) + '" y="' + (y(t) + 3.5) + '" text-anchor="end">' + t + '</text>'; });
+    var pts = d.map(function(v, i){ return x(i) + "," + y(v); }).join(" ");
+    s += '<polygon class="area" points="' + x(0) + ',' + B + ' ' + pts + ' ' + x(d.length - 1) + ',' + B + '"/>';
+    s += '<polyline class="line" points="' + pts + '"/>';
+    d.forEach(function(v, i){
+      s += '<circle class="pt' + (i === 0 ? ' first' : '') + '" cx="' + x(i) + '" cy="' + y(v) + '" r="4.5"/>';
+      s += '<text class="val" x="' + x(i) + '" y="' + (y(v) - 10) + '" text-anchor="middle">' + v + '%</text>';
+      s += '<text class="axis-t" x="' + x(i) + '" y="' + (B + 16) + '" text-anchor="middle">' + (i + 1) + (i === 0 ? ' step' : '') + '</text>';
+    });
+    s += '<text class="axis-t" x="' + ((L + R) / 2) + '" y="' + (B + 30) + '" text-anchor="middle">synthesis steps</text>';
+    svg.innerHTML = s;
+  })();
+
+  // ---- Copy buttons
+  document.querySelectorAll(".copy").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var el = document.getElementById(btn.getAttribute("data-copy"));
+      var text = el.innerText;
+      function done(msg){ btn.textContent = msg; setTimeout(function(){ btn.textContent = "Copy"; }, 1600); }
+      function fallback(){
+        try { var r = document.createRange(); r.selectNodeContents(el); var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); done("Selected"); } catch(e){ done("Select text"); }
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function(){ done("Copied"); }, fallback);
+      } else { fallback(); }
+    });
+  });
+})();
+</script>
+</body>
+</html>
