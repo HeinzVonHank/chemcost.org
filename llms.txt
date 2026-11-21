@@ -3,7 +3,7 @@
 > ChemCost ("Can Agents Price a Reaction? Evaluating LLMs on Chemical Cost Reasoning", NeurIPS 2026, Evaluations and Datasets Track) is a judge-free benchmark for LLM agents on chemical reaction procurement-cost estimation. Given a reaction as it was run in the lab (component names and amounts, product, isolated mass), an agent must return the US-dollar cost of buying enough material to run the reaction at 1 mmol of a named scale reference compound, per gram of product. Labels are computed deterministically from a frozen snapshot of pack-level supplier quotes, so scoring needs no LLM judge.
 
 - 1,427 reactions: 1,359 single-step reactions and 68 multi-step synthesis routes
-- Frozen pricing snapshot: 230,775 pack-level supplier quotes for 2,261 chemicals
+- Frozen 2026 snapshot of pack-level supplier quotes, shipped with the dataset as SQLite
 - Agents must resolve chemical names to structures, derive stoichiometry from lab amounts, retrieve supplier quotes, choose whole packs (purity >= 95%), and aggregate cost
 - Headline metric: CTA@k, the share of reactions priced within k% of the label (CTA@10, CTA@25); abstentions count as failures
 - Agent tools: get_supplier_quotes(smiles_or_name), calculate(expression); also served over MCP with `chemcost mcp`
