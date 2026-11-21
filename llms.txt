@@ -1,0 +1,45 @@
+# ChemCost
+
+> ChemCost ("Can Agents Price a Reaction? Evaluating LLMs on Chemical Cost Reasoning", NeurIPS 2026, Evaluations and Datasets Track) is a judge-free benchmark for LLM agents on chemical reaction procurement-cost estimation. Given a reaction as it was run in the lab (component names and amounts, product, isolated mass), an agent must return the US-dollar cost of buying enough material to run the reaction at 1 mmol of a named scale reference compound, per gram of product. Labels are computed deterministically from a frozen snapshot of pack-level supplier quotes, so scoring needs no LLM judge.
+
+- 1,427 reactions: 1,359 single-step reactions and 68 multi-step synthesis routes
+- Frozen pricing snapshot: 230,775 pack-level supplier quotes for 2,261 chemicals
+- Agents must resolve chemical names to structures, derive stoichiometry from lab amounts, retrieve supplier quotes, choose whole packs (purity >= 95%), and aggregate cost
+- Headline metric: CTA@k, the share of reactions priced within k% of the label (CTA@10, CTA@25); abstentions count as failures
+- Agent tools: get_supplier_quotes(smiles_or_name), calculate(expression); also served over MCP with `chemcost mcp`
+- License: code MIT; dataset and pricing database CC BY-SA 4.0
+
+## Links
+
+- [Paper (arXiv:2605.07251)](https://arxiv.org/abs/2605.07251)
+- [NeurIPS 2026 poster page](https://neurips.cc/virtual/2026/poster/139478)
+- [Code and evaluation harness](https://github.com/HeinzVonHank/ChemCost)
+- [Dataset on Hugging Face](https://huggingface.co/datasets/YoungerWu/ChemCost)
+
+## Quick start
+
+```bash
+git clone https://github.com/HeinzVonHank/ChemCost.git && cd ChemCost
+pip install -e ".[eval]"
+python scripts/download_data.py     # data/chemcost.jsonl + data/pricing_db.sqlite
+python scripts/verify_labels.py     # recompute every label from the frozen DB
+python scripts/run_evaluation.py --agent react --provider anthropic --model claude-sonnet-4-6 --output results/react.json
+```
+
+```python
+from datasets import load_dataset
+chemcost = load_dataset("YoungerWu/ChemCost", split="test")
+```
+
+Do not give raw records to the agent under test: they contain SMILES, equivalents, selected packs and the label. Use `chemcost.evaluation.evaluator.prepare_agent_input`, and evaluate without web or Hugging Face access.
+
+## Citation
+
+```bibtex
+@inproceedings{wu2026chemcost,
+  title     = {Can Agents Price a Reaction? Evaluating {LLMs} on Chemical Cost Reasoning},
+  author    = {Wu, Yuyang and Huang, Yue and Shen, Shuaike and Wang, Xujian and Zhang, Shuhao and Xue, Qiyao and Liu, Weichen and Gao, Runtian and Ma, Jian and Zhang, Xiangliang and Isayev, Olexandr},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS), Evaluations and Datasets Track},
+  year      = {2026}
+}
+```
